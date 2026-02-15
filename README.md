@@ -1,5 +1,11 @@
 # TextToTurtleBot
 
+## Project Demonstration
+[Physcial Unit - using LIDAR for world coordinates](https://www.youtube.com/watch?v=CSBLQPxjoMg)
+
+[Simulator - using Depth Camera for world coordinates](https://www.youtube.com/watch?v=7JPPEyZ4snA)
+
+## Project Structure
 ```
 .
 ├── core/               # Behavior tree, LLM logic
