@@ -11,7 +11,7 @@ Willkommen zum Entwickler-Leitfaden von TextToTurtleBot. Dieser Bereich enthält
 
 ## Lokale Entwicklungsumgebung
 
-1.  Folgen Sie den [Installationsanweisungen](installation.md) für Entwickler.
+1.  Folgen Sie den [Installationsanweisungen](../installation.md) für Entwickler.
 2.  Installieren Sie zusätzliche Entwickler-Tools:
     ```bash
     pip install pytest pytest-cov black isort mypy interrogate

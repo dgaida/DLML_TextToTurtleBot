@@ -76,41 +76,41 @@ markdown_extensions:
 
 nav:
   - Home:
-    - de: index.md
-    - en: index.md
+    - de: de/index.md
+    - en: en/index.md
   - Getting Started:
-    - de: getting-started.md
-    - en: getting-started.md
+    - de: de/getting-started.md
+    - en: en/getting-started.md
   - Installation:
-    - de: installation.md
-    - en: installation.md
+    - de: de/installation.md
+    - en: en/installation.md
   - Configuration:
-    - de: configuration.md
-    - en: configuration.md
+    - de: de/configuration.md
+    - en: en/configuration.md
   - Usage:
-    - de: usage/index.md
-    - en: usage/index.md
+    - de: de/usage/index.md
+    - en: en/usage/index.md
   - API:
-    - de: api/index.md
-    - en: api/index.md
+    - de: de/api/index.md
+    - en: en/api/index.md
   - Architecture:
-    - de: architecture/index.md
-    - en: architecture/index.md
+    - de: de/architecture/index.md
+    - en: en/architecture/index.md
   - Development:
-    - de: development/index.md
-    - en: development/index.md
+    - de: de/development/index.md
+    - en: en/development/index.md
     - Changelog:
-      - de: development/changelog.md
-      - en: development/changelog.md
+      - de: de/development/changelog.md
+      - en: en/development/changelog.md
     - Docstring Guide:
-      - de: development/docstring-guide.md
-      - en: development/docstring-guide.md
+      - de: de/development/docstring-guide.md
+      - en: en/development/docstring-guide.md
     - Versioning:
-      - de: development/versioning.md
-      - en: development/versioning.md
+      - de: de/development/versioning.md
+      - en: en/development/versioning.md
   - Troubleshooting:
-    - de: troubleshooting.md
-    - en: troubleshooting.md
+    - de: de/troubleshooting.md
+    - en: en/troubleshooting.md
   - Metrics:
-    - de: metrics.md
-    - en: metrics.md
+    - de: de/metrics.md
+    - en: en/metrics.md

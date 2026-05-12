@@ -17,7 +17,7 @@ Dieses Dashboard visualisiert die Qualität und Abdeckung unserer Dokumentation.
 </div>
 
 <script>
-fetch('../assets/metrics.json')
+fetch('assets/metrics.json')
   .then(response => response.json())
   .then(data => {
     const dashboard = document.getElementById('metrics-dashboard');
