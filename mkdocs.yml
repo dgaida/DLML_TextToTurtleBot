@@ -45,6 +45,8 @@ plugins:
             show_source: true
             show_root_heading: true
             show_category_heading: true
+            import_policy: "clever"
+            allow_inspect: true
   - mermaid2:
       arguments:
         theme: material
