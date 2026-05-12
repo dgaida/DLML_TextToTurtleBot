@@ -1,6 +1,6 @@
 # TextToTurtleBot
 
-![Interrogate Coverage](../assets/interrogate.svg)
+![Interrogate Coverage](assets/interrogate.svg)
 
 Welcome to the **TextToTurtleBot** documentation. This project enables natural language control of a TurtleBot 4 by integrating state-of-the-art LLMs (Large Language Models) and ROS 2.
 

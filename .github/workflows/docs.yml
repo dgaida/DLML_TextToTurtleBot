@@ -34,8 +34,9 @@ jobs:
 
       - name: Check API doc coverage
         run: |
-          mkdir -p docs/assets
-          interrogate . --fail-under 0 --generate-badge docs/assets/interrogate.svg
+          mkdir -p docs/de/assets docs/en/assets
+          interrogate . --fail-under 0 --generate-badge docs/de/assets/interrogate.svg
+          cp docs/de/assets/interrogate.svg docs/en/assets/interrogate.svg
 
       - name: Lint Markdown
         uses: davidanson/markdownlint-cli2-action@v16
@@ -50,9 +51,11 @@ jobs:
 
       - name: Collect and write metrics
         run: |
-          mkdir -p docs/assets
+          mkdir -p docs/de/assets docs/en/assets
           API_COV=$(interrogate . | grep -oP '(?<=Actual coverage: )\d+\.\d+' || echo "0.0")
-          echo "{\"api_coverage\": \"$API_COV\", \"broken_links\": 0, \"lint_errors\": 0, \"last_updated\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}" > docs/assets/metrics.json
+          METRICS="{\"api_coverage\": \"$API_COV\", \"broken_links\": 0, \"lint_errors\": 0, \"last_updated\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}"
+          echo "$METRICS" > docs/de/assets/metrics.json
+          echo "$METRICS" > docs/en/assets/metrics.json
 
       - name: Build MkDocs
         run: mkdocs build --strict

@@ -1,6 +1,6 @@
 # TextToTurtleBot
 
-![Interrogate Coverage](../assets/interrogate.svg)
+![Interrogate Coverage](assets/interrogate.svg)
 
 Willkommen zur Dokumentation von **TextToTurtleBot**. Dieses Projekt ermöglicht die Steuerung eines TurtleBot 4 mittels natürlicher Sprache durch die Integration modernster LLMs (Large Language Models) und ROS 2.
 
