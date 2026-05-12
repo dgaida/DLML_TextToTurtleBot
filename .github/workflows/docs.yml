@@ -34,6 +34,7 @@ jobs:
 
       - name: Check API doc coverage
         run: |
+          mkdir -p docs/assets
           interrogate . --fail-under 0 --generate-badge docs/assets/interrogate.svg
 
       - name: Lint Markdown
@@ -49,6 +50,7 @@ jobs:
 
       - name: Collect and write metrics
         run: |
+          mkdir -p docs/assets
           API_COV=$(interrogate . | grep -oP '(?<=Actual coverage: )\d+\.\d+' || echo "0.0")
           echo "{\"api_coverage\": \"$API_COV\", \"broken_links\": 0, \"lint_errors\": 0, \"last_updated\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}" > docs/assets/metrics.json
 
