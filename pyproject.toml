@@ -1,0 +1,15 @@
+[tool.interrogate]
+ignore-init-method = true
+ignore-init-module = false
+ignore-magic = true
+fail-under = 95
+verbose = 1
+exclude = ["setup.py", "docs", "build", "dist", "web/frontend"]
+ignore-regex = ["^test_.*", ".*Test$"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+
+[tool.markdownlint]
+config = { "MD013" = false, "MD033" = false }
