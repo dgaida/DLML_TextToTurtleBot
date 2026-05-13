@@ -1,6 +1,6 @@
 # Architecture
 
-TextToTurtleBot is designed modularly to allow for flexible integration of AI models and robot control.
+TextToTurtleBot is modularly structured to allow flexible integration of AI models and robot control.
 
 ## System Overview
 
@@ -28,12 +28,38 @@ graph TD
 
 The data flow for a voice command is as follows:
 
-1.  The user enters text in the **Web Dashboard**.
-2.  The **Web Backend** receives the text and forwards it to the **TextToTurtlebotNode**.
-3.  The **LLM API** service analyzes the text using an LLM adapter and generates structured commands.
-4.  These commands are fed into the **Behavior Tree**.
-5.  The behavior tree executes the corresponding **Skills** (e.g., navigation, object search) by interacting with the **ROS 2 Ecosystem**.
-6.  State and sensor data are continuously synchronized via the **Blackboard** and visualized in the dashboard.
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as Web Backend
+    participant B as Blackboard
+    participant T as TextToTurtlebotNode
+    participant L as LLM API
+
+    U->>W: Sends voice command
+    W->>B: Writes command to queue
+    T->>B: Reads command from queue
+    T->>L: Request for analysis
+    L-->>T: Structured commands
+    T->>T: Executes Behavior Tree
+    T->>B: Updates status
+    B-->>W: Status update (polling/event)
+    W-->>U: Shows progress in dashboard
+```
+
+## Component Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Initializing
+    Initializing --> Idle: ROS 2 nodes started
+    Idle --> Processing: Voice command received
+    Processing --> Executing: LLM plan generated
+    Executing --> Processing: Next step
+    Executing --> Idle: Mission completed
+    Executing --> Error: Error occurred
+    Error --> Idle: Recovery/Reset
+```
 
 ## Core Components
 
@@ -41,7 +67,7 @@ The data flow for a voice command is as follows:
 Contains the main logic of the robot, including behavior trees, LLM integration, and ROS 2 interfaces.
 
 ### shared/
-Includes shared code such as the Blackboard and Event Bus, facilitating communication between modules.
+Includes shared code such as the blackboard and event bus, which facilitate communication between modules.
 
 ### web/
 Includes the FastAPI backend and the frontend for the monitoring dashboard.
