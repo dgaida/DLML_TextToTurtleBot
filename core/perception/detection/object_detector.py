@@ -1,5 +1,4 @@
 import math
-from typing import Dict, List
 from numpy import ndarray
 from ultralytics import YOLO
 

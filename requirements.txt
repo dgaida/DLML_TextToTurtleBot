@@ -14,4 +14,4 @@ uvicorn
 openai
 pyrealsense2
 python-dotenv
-llm_client
+git+https://github.com/dgaida/llm_client.git
