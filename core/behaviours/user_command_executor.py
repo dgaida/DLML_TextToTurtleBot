@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 
 import py_trees
 from py_trees.common import Status
@@ -28,23 +28,19 @@ class UserCommandExecutor(py_trees.behaviour.Behaviour):
         self._blackboard: Blackboard = Blackboard()
         self._event_bus: EventBus = EventBus()
         self._twist: Optional[TwistWrapper] = None
-        self._publisher = None
+        self._publisher: Optional[Any] = None
         self._active_skill: Optional[py_trees.behaviour.Behaviour] = None
         self._active_command: Optional[UserCommand] = None
         self._nav_client = nav_client
         self._docking_client = docking_client
         self._node = node
 
-    def setup(
-        self,
-        twist: TwistWrapper,
-        publisher,
-    ) -> None:  # type: ignore[override]
+    def setup(self, twist: TwistWrapper, publisher: Any, **kwargs: Any) -> None:  # type: ignore[override]
         self._twist = twist
         self._publisher = publisher
 
     def update(self) -> Status:
-        if any(dep is None for dep in (self._twist, self._publisher)):
+        if self._twist is None or self._publisher is None:
             self.logger.error("UserCommandExecutor dependencies not initialised")
             return Status.FAILURE
 
@@ -96,6 +92,9 @@ class UserCommandExecutor(py_trees.behaviour.Behaviour):
         self._active_command = None
 
     def _build_command_skill(self) -> bool:
+        if self._twist is None or self._publisher is None:
+            return False
+
         next_command = self._blackboard.peek_command()
         if next_command is None:
             return False
@@ -148,7 +147,7 @@ class UserCommandExecutor(py_trees.behaviour.Behaviour):
                     self._docking_client,
                 )
         else:
-            self.logger.warn(f"Unsupported command type: {next_command.command_type}")
+            self.logger.warning(f"Unsupported command type: {next_command.command_type}")
             dropped = self._blackboard.pop_command()
             if dropped is not None:
                 self._event_bus.publish(DomainEvent(EventType.COMMAND_CANCELLED, dropped))

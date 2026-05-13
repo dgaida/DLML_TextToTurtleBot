@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import py_trees
 from py_trees.common import Status
@@ -30,32 +30,33 @@ class SendNavGoalToTarget(py_trees.behaviour.Behaviour):
             return Status.SUCCESS
 
         target_class = self._blackboard.get(BlackboardDataKey.TARGET_OBJECT_CLASS)
-        persistent_objects: List[PersistentTrackedObject] = self._blackboard.get(BlackboardDataKey.ROBOT_MAP)
-        selected_target_object: DetectedObject = self._blackboard.get(BlackboardDataKey.SELECTED_TARGET_OBJECT)
+        persistent_objects: List[PersistentTrackedObject] = self._blackboard.get(BlackboardDataKey.ROBOT_MAP) or []
+        selected_target_object: Optional[DetectedObject] = self._blackboard.get(BlackboardDataKey.SELECTED_TARGET_OBJECT)
 
-        target: Optional[DetectedObject] = None
+        target_node: Optional[Union[DetectedObject, PersistentTrackedObject]] = None
 
         # Try to use the selected target object if it exists in the map
         if selected_target_object:
-            target_in_map = self._find_selected_target_in_robot_map(persistent_objects, selected_target_object)
-            if target_in_map:
-                target = target_in_map
+            target_node = self._find_selected_target_in_robot_map(persistent_objects, selected_target_object)
 
         # Otherwise, find the first instance of the target class in the map
-        if target is None:
-            target = self._find_closest_target_in_robot_map(persistent_objects, target_class)
+        if target_node is None and target_class:
+            target_node = self._find_closest_target_in_robot_map(persistent_objects, target_class)
 
-        if target is None:
+        if target_node is None:
             return Status.FAILURE
         
-        if isinstance(target, PersistentTrackedObject):
-            target = target.detected_object
+        target: Optional[DetectedObject] = None
+        if isinstance(target_node, PersistentTrackedObject):
+            target = target_node.detected_object
+        else:
+            target = target_node
 
         if target is None:
             return Status.FAILURE
 
-        target_x = float(target.world_x or 0.0)
-        target_y = float(target.world_y or 0.0)
+        target_x = float(target.world_x if target.world_x is not None else 0.0)
+        target_y = float(target.world_y if target.world_y is not None else 0.0)
 
         goal_x = target_x
         goal_y = target_y
@@ -99,10 +100,10 @@ class SendNavGoalToTarget(py_trees.behaviour.Behaviour):
         self.logger.error("Failed to send Nav2 goal for target object")
         return Status.FAILURE
     
-    def _find_selected_target_in_robot_map(self, map: List[PersistentTrackedObject], target_object: DetectedObject) -> Optional[DetectedObject]:
-        for object in map:
-            if object.detected_object == target_object:
-                return object
+    def _find_selected_target_in_robot_map(self, map: List[PersistentTrackedObject], target_object: DetectedObject) -> Optional[PersistentTrackedObject]:
+        for obj in map:
+            if obj.detected_object == target_object:
+                return obj
         return None
 
     def _find_closest_target_in_robot_map(self, map: List[PersistentTrackedObject], target_class: str) -> Optional[PersistentTrackedObject]:
@@ -110,17 +111,19 @@ class SendNavGoalToTarget(py_trees.behaviour.Behaviour):
         closest_distance = float('inf')
 
         robot_position = self._blackboard.get(BlackboardDataKey.ROBOT_POSITION)
+        if not robot_position:
+            return None
 
-        for object in map:
-            if object.detected_object.name.lower() != target_class.lower():
+        for obj in map:
+            if obj.detected_object.name.lower() != target_class.lower():
                 continue
 
-            distance = object.detected_object.distance_to_world_coordinates(robot_position.x, robot_position.y, robot_position.z)
+            distance = obj.detected_object.distance_to_world_coordinates(robot_position.x, robot_position.y, robot_position.z)
             if distance < closest_distance:
                 closest_distance = distance
-                closest_object = object
+                closest_object = obj
 
-        return closest_object if closest_object else None
+        return closest_object
         
 
     @staticmethod

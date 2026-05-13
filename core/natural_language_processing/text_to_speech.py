@@ -12,8 +12,8 @@ try:  # pragma: no-cover - optional dependency in offline environments
     from openai import OpenAI
     from openai import OpenAIError  # type: ignore
 except Exception:  # noqa: BLE001 - fallback when OpenAI SDK is unavailable
-    OpenAI = None  # type: ignore[assignment]
-    OpenAIError = Exception  # type: ignore[assignment]
+    OpenAI = None  # type: ignore[assignment, misc]
+    OpenAIError = Exception  # type: ignore[assignment, misc]
 
 
 LOGGER = logging.getLogger(__name__)

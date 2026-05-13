@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, Any
 import py_trees
 from py_trees.common import Status
 
@@ -17,21 +17,20 @@ class DriveMotion(py_trees.behaviour.Behaviour):
         super().__init__(name)
         self._blackboard: Blackboard = Blackboard()
         self._twist: Optional[TwistWrapper] = None
-        self._publisher = None
+        self._publisher: Optional[Any] = None
         self._command = command
         self._speed = abs(speed)
         self._tolerance = max(tolerance, 0.0)
 
-    def setup(self, twist: TwistWrapper, publisher) -> None:
+    def setup(self, twist: TwistWrapper, publisher: Any, **kwargs: Any) -> None:  # type: ignore[override]
         self._twist = twist
         self._publisher = publisher
 
     def initialise(self) -> None:
-        # Ensure the robot is stationary at the start of the motion phase
         self._halt_motion()
 
     def update(self) -> Status:
-        if any(value is None for value in (self._twist, self._publisher)):
+        if self._twist is None or self._publisher is None:
             return Status.FAILURE
 
         target_distance = self._blackboard.get(BlackboardDataKey.DRIVE_TARGET_DISTANCE)
@@ -52,7 +51,6 @@ class DriveMotion(py_trees.behaviour.Behaviour):
         dy = current_pose.y - start_pose["y"]
         travelled = math.hypot(dx, dy)
 
-        # Determine signed progress: forward = +, backward = -
         signed_travelled = travelled * float(direction_sign)
         EventBus().publish(
             DomainEvent(EventType.DRIVE_PROGRESS_UPDATED, abs(signed_travelled))

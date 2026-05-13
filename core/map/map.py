@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional, Union, Sequence
 from shared.events.event_bus import EventBus
 from shared.events.interfaces.events import EventType, DomainEvent
 from shared.blackboard.blackboard import Blackboard
@@ -16,7 +16,7 @@ class TemporaryTrackedObject:
         self.last_seen_timestamp = time.time()
         self.frames_not_seen = 0
 
-    def update(self, detected_object: DetectedObject):
+    def update(self, detected_object: DetectedObject) -> None:
         self.detected_object = detected_object
         self.consecutive_frames += 1
         self.last_seen_timestamp = time.time()
@@ -30,7 +30,7 @@ class PersistentTrackedObject:
         self.last_seen_timestamp = time.time()
         self.total_detections = 1
 
-    def update(self, detected_object: DetectedObject):
+    def update(self, detected_object: DetectedObject) -> None:
         self.detected_object = detected_object
         self.last_seen_timestamp = time.time()
         self.total_detections += 1
@@ -40,17 +40,10 @@ class Map:
         self._event_bus = EventBus()
         self._blackboard = Blackboard()
 
-        # Number of consecutive frames required to confirm object persistence
         self.consecutive_frame_threshold = 30
-
-        # Maximum distance to consider objects for processing (in meters)
-        self.max_processing_distance = 7.5  # meters
-
-        # Distance threshold to consider two objects of the same class as the same (in meters)
-        self.match_distance_threshold = 0.5  # meters
-
-        # Time threshold to remove temporary tracked objects if not seen again (in seconds)
-        self.temporary_tracked_object_timeout = 5.0  # seconds
+        self.max_processing_distance = 7.5
+        self.match_distance_threshold = 0.5
+        self.temporary_tracked_object_timeout = 5.0
         
         self.temporary_tracked_objects: List[TemporaryTrackedObject] = []
         self.persistent_tracked_objects: List[PersistentTrackedObject] = []
@@ -58,7 +51,7 @@ class Map:
         self._timer = node.create_timer(0.1, self._process_map)
 
 
-    def _process_map(self):
+    def _process_map(self) -> None:
         robot_is_turning = self._blackboard.get(BlackboardDataKey.ROBOT_IS_TURNING, False)
 
         if robot_is_turning:
@@ -74,16 +67,19 @@ class Map:
             temp_object.frames_not_seen += 1
 
         for detected_object_class in detected_object_classes:
-            for i, detected_object in enumerate(detected_objects_with_coordinates[detected_object_class]):
+            for detected_object in detected_objects_with_coordinates[detected_object_class]:
                 self._process_detected_object(detected_object)
 
         self._cleanup_and_promote_objects()
         self._event_bus.publish(DomainEvent(EventType.MAP_UPDATED, self.persistent_tracked_objects))
-        # print(self)
        
     
-    def _process_detected_object(self, detected_object: DetectedObject):
-        matching_object: TemporaryTrackedObject | PersistentTrackedObject | None = self._find_matching_object(detected_object, self.temporary_tracked_objects + self.persistent_tracked_objects)
+    def _process_detected_object(self, detected_object: DetectedObject) -> None:
+        all_objects: List[Union[TemporaryTrackedObject, PersistentTrackedObject]] = []
+        all_objects.extend(self.temporary_tracked_objects)
+        all_objects.extend(self.persistent_tracked_objects)
+
+        matching_object = self._find_matching_object(detected_object, all_objects)
 
         robot_position = self._blackboard.get(BlackboardDataKey.ROBOT_POSITION, None)
         if not robot_position:
@@ -101,26 +97,27 @@ class Map:
             self.temporary_tracked_objects.append(new_temp_object)
 
 
-    def _find_matching_object(self, detected_object: DetectedObject, object_list: List[TemporaryTrackedObject | PersistentTrackedObject]) -> TemporaryTrackedObject | PersistentTrackedObject | None:
+    def _find_matching_object(
+        self,
+        detected_object: DetectedObject,
+        object_list: Sequence[Union[TemporaryTrackedObject, PersistentTrackedObject]]
+    ) -> Optional[Union[TemporaryTrackedObject, PersistentTrackedObject]]:
         best_match = None
         best_distance = float('inf')
 
-        # I should probably think of an immutable way of doing this
-
-        for object in object_list:
-            # Check if the classes match
-            if not detected_object.name == object.detected_object.name:
+        for obj in object_list:
+            if not detected_object.name == obj.detected_object.name:
                 continue
                 
-            distance = object.detected_object.distance_to_other_object(detected_object)
+            distance = obj.detected_object.distance_to_other_object(detected_object)
             if distance < self.match_distance_threshold and distance < best_distance:
                 best_distance = distance
-                best_match = object
+                best_match = obj
 
         return best_match
 
-    # TODO: Split this into two methods, we don't do "and"'s in method names - SRP.
-    def _cleanup_and_promote_objects(self):
+
+    def _cleanup_and_promote_objects(self) -> None:
         current_time = time.time()
         objects_to_promote = []
         temporary_objects_to_keep = []
@@ -140,17 +137,16 @@ class Map:
             self._promote_object(obj)
 
 
-    def _promote_object(self, detected_object: TemporaryTrackedObject):
-        matching_persistent_object = self._find_matching_object(detected_object.detected_object, self.persistent_tracked_objects)
+    def _promote_object(self, temp_obj: TemporaryTrackedObject) -> None:
+        matching_persistent_object = self._find_matching_object(temp_obj.detected_object, self.persistent_tracked_objects)
 
-        # The object has already been promoted by another temporary object
         if matching_persistent_object:
-            matching_persistent_object.update(detected_object.detected_object)
+            matching_persistent_object.update(temp_obj.detected_object)
         else:
-            new_persistent_object = PersistentTrackedObject(detected_object.detected_object)
+            new_persistent_object = PersistentTrackedObject(temp_obj.detected_object)
             self.persistent_tracked_objects.append(new_persistent_object)
 
-    def __str__(self):
+    def __str__(self) -> str:
         lines = ["Persistent Tracked Objects:"]
         for obj in self.persistent_tracked_objects:
             detected = obj.detected_object

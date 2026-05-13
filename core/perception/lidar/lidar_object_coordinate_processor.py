@@ -1,49 +1,30 @@
+from typing import List, Dict, Optional, Tuple, Any
 import math
-from typing import Dict, List, Optional, Tuple
-
 import numpy as np
-import pyrealsense2 as rs2
-from builtin_interfaces.msg import Time
+from rclpy.time import Time
 from geometry_msgs.msg import PointStamped
-import tf2_geometry_msgs  # noqa: F401 - needed for TF conversions
-
+import pyrealsense2 as rs2
 from shared.blackboard.blackboard import Blackboard
 from shared.blackboard.interfaces.blackboard_data_keys import BlackboardDataKey
 from shared.events.event_bus import EventBus
-from shared.events.interfaces.events import DomainEvent, EventType
+from shared.events.interfaces.events import EventType, DomainEvent
 from core.perception.detection.object_detector import DetectedObject
 
-
 class LidarObjectCoordinateProcessor:
-    """
-    Estimate world coordinates for camera detections by intersecting their viewing rays
-    with the latest LIDAR point cloud in the world frame.
-    """
-
-    def __init__(
-        self,
-        tf_buffer,
-        camera_frame: str = "oakd_rgb_camera_optical_frame",
-        world_frame: str = "map",
-        lateral_tolerance: float = 0.4,
-        max_distance: float = 15.0,
-        horizontal_tolerance_ratio: float = 0.2,
-        vertical_sample_count: int = 3,
-        vertical_sample_stride_ratio: float = 0.15,
-    ) -> None:
-        self._tf_buffer = tf_buffer
+    def __init__(self, tf_buffer: Any):
         self._event_bus = EventBus()
         self._blackboard = Blackboard()
-
-        self.camera_frame = camera_frame
-        self.world_frame = world_frame
-        self.lateral_tolerance = max(0.05, float(lateral_tolerance))
-        self.max_distance = max(0.0, float(max_distance))
-        self.horizontal_tolerance_ratio = max(0.0, float(horizontal_tolerance_ratio))
-        self.vertical_sample_count = max(1, int(vertical_sample_count))
-        self.vertical_sample_stride_ratio = max(0.01, float(vertical_sample_stride_ratio))
-
+        self._tf_buffer = tf_buffer
         self.intrinsics: Optional[rs2.intrinsics] = None
+        self.camera_frame = "oakd_rgb_camera_optical_frame"
+        self.world_frame = "map"
+
+        self.horizontal_tolerance_ratio = 0.1
+        self.vertical_sample_count = 5
+        self.vertical_sample_stride_ratio = 0.1
+        self.lateral_tolerance = 0.2
+        self.max_distance = 10.0
+
         self._latest_detections: Dict[str, List[DetectedObject]] = {}
         self._latest_lidar_points: List[Dict[str, float]] = []
         self._latest_lidar_stamp: Optional[Time] = None
@@ -55,26 +36,27 @@ class LidarObjectCoordinateProcessor:
         self._event_bus.unsubscribe(EventType.OBJECTS_DETECTED, self._on_objects_detected)
         self._event_bus.unsubscribe(EventType.LIDAR_POINTS_UPDATED, self._on_lidar_points_updated)
 
-    def set_camera_intrinsics(self, camera_info) -> None:
+    def set_camera_intrinsics(self, camera_info: Any) -> None:
         if self.intrinsics:
             return
 
-        self.intrinsics = rs2.intrinsics()
-        self.intrinsics.width = camera_info.width
-        self.intrinsics.height = camera_info.height
-        self.intrinsics.ppx = camera_info.k[2]
-        self.intrinsics.ppy = camera_info.k[5]
-        self.intrinsics.fx = camera_info.k[0]
-        self.intrinsics.fy = camera_info.k[4]
+        intrinsics = rs2.intrinsics()
+        intrinsics.width = int(camera_info.width)
+        intrinsics.height = int(camera_info.height)
+        intrinsics.ppx = float(camera_info.k[2])
+        intrinsics.ppy = float(camera_info.k[5])
+        intrinsics.fx = float(camera_info.k[0])
+        intrinsics.fy = float(camera_info.k[4])
 
         if camera_info.distortion_model == "plumb_bob":
-            self.intrinsics.model = rs2.distortion.brown_conrady
+            intrinsics.model = rs2.distortion.brown_conrady
         elif camera_info.distortion_model == "equidistant":
-            self.intrinsics.model = rs2.distortion.kannala_brandt4
-        self.intrinsics.coeffs = [value for value in camera_info.d[:5]]
+            intrinsics.model = rs2.distortion.kannala_brandt4
+        intrinsics.coeffs = [float(value) for value in camera_info.d[:5]]
+        self.intrinsics = intrinsics
 
     def _on_objects_detected(self, event: DomainEvent) -> None:
-        data = event.data or {}
+        data = event.data
         if not isinstance(data, dict):
             self._latest_detections = {}
         else:
@@ -112,9 +94,9 @@ class LidarObjectCoordinateProcessor:
                 if match is None:
                     continue
 
-                detected_object.world_x = match[0]
-                detected_object.world_y = match[1]
-                detected_object.world_z = match[2]
+                detected_object.world_x = float(match[0])
+                detected_object.world_y = float(match[1])
+                detected_object.world_z = float(match[2])
                 matched_objects.append(detected_object)
 
             if matched_objects:
@@ -125,6 +107,8 @@ class LidarObjectCoordinateProcessor:
         )
 
     def _match_object_to_lidar_point(self, detected_object: DetectedObject) -> Optional[Tuple[float, float, float]]:
+        if not self.intrinsics:
+            return None
         center_x = int((detected_object.x1 + detected_object.x2) / 2)
         principal_x = float(self.intrinsics.ppx)
         image_width = float(self.intrinsics.width)
@@ -156,6 +140,8 @@ class LidarObjectCoordinateProcessor:
         return None
 
     def _match_pixel_ray(self, u: int, v: int) -> Optional[Tuple[float, float, float]]:
+        if not self.intrinsics:
+            return None
         if not (0 <= u < self.intrinsics.width and 0 <= v < self.intrinsics.height):
             return None
 
@@ -165,9 +151,9 @@ class LidarObjectCoordinateProcessor:
 
         origin_world = self._transform_to_world_coordinates(0.0, 0.0, 0.0, self._latest_lidar_stamp)
         direction_world_point = self._transform_to_world_coordinates(
-            ray_direction_camera[0],
-            ray_direction_camera[1],
-            ray_direction_camera[2],
+            float(ray_direction_camera[0]),
+            float(ray_direction_camera[1]),
+            float(ray_direction_camera[2]),
             self._latest_lidar_stamp,
         )
 
@@ -176,7 +162,7 @@ class LidarObjectCoordinateProcessor:
 
         direction_vector = np.array(direction_world_point) - np.array(origin_world)
         direction_xy = direction_vector[:2]
-        direction_xy_norm = np.linalg.norm(direction_xy)
+        direction_xy_norm = float(np.linalg.norm(direction_xy))
         if direction_xy_norm < 1e-6:
             return None
         direction_xy_unit = direction_xy / direction_xy_norm
@@ -204,8 +190,8 @@ class LidarObjectCoordinateProcessor:
                 continue
 
             best_point = (
-                point["x"],
-                point["y"],
+                float(point["x"]),
+                float(point["y"]),
                 self._estimate_world_z(origin_world, direction_vector, direction_xy_norm, longitudinal),
             )
             best_lateral_offset = lateral_offset
@@ -214,12 +200,14 @@ class LidarObjectCoordinateProcessor:
             return None
 
         robot_position = self._blackboard.get(BlackboardDataKey.ROBOT_POSITION)
-        if robot_position is not None and getattr(robot_position, "z", None) is not None:
-            world_z = float(robot_position.z)
+        if robot_position is not None:
+            world_z = float(getattr(robot_position, "z", best_point[2]))
             best_point = (best_point[0], best_point[1], world_z)
         return best_point
 
     def _pixel_to_unit_ray(self, u: int, v: int) -> Optional[np.ndarray]:
+        if not self.intrinsics:
+            return None
         try:
             point = rs2.rs2_deproject_pixel_to_point(self.intrinsics, [u, v], 1.0)
         except Exception:
@@ -264,7 +252,7 @@ class LidarObjectCoordinateProcessor:
                     self.world_frame,
                 )
             except Exception:
-                point_stamped.header.stamp = Time()
+                point_stamped.header.stamp = Time().to_msg()
 
         point_stamped.point.x = float(x)
         point_stamped.point.y = float(y)
@@ -305,4 +293,4 @@ class LidarObjectCoordinateProcessor:
             return None
         seconds = int(ts)
         nanoseconds = int((ts - seconds) * 1e9)
-        return Time(sec=seconds, nanosec=nanoseconds)
+        return Time(seconds=seconds, nanoseconds=nanoseconds)

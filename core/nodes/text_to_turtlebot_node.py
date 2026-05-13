@@ -37,7 +37,6 @@ from langchain_core.messages import BaseMessage
 from core.perception.lidar.lidar_processor import LidarProcessor
 from core.perception.lidar.lidar_object_coordinate_processor import LidarObjectCoordinateProcessor
 
-from std_msgs.msg import String
 
 class TextToTurtlebotNode(Node):
     def __init__(self, namespace: str = '', use_turtlebot_sim: bool = False) -> None:

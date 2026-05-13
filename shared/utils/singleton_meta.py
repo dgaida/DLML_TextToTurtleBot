@@ -1,3 +1,6 @@
+from typing import Any, Dict
+
+
 # Source: https://refactoring.guru/design-patterns/singleton/python/example
 class SingletonMeta(type):
     """
@@ -6,9 +9,9 @@ class SingletonMeta(type):
     metaclass because it is best suited for this purpose.
     """
 
-    _instances = {}
+    _instances: Dict[Any, Any] = {}
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         """
         Possible changes to the value of the `__init__` argument do not affect
         the returned instance.

@@ -1,4 +1,4 @@
-"""Helpers to generate serialized state for the mission board frontend."""
+"""Helper to build a unified mission board state from blackboard data."""
 from __future__ import annotations
 
 import math
@@ -10,12 +10,13 @@ from shared.blackboard.interfaces.blackboard_data_keys import BlackboardDataKey
 
 
 class MissionBoardStateBuilder:
-    """Collects and serializes the current blackboard state for the mission board UI."""
+    """Serializes the robot and mission state for the web frontend."""
 
-    def __init__(self) -> None:
-        self._blackboard = Blackboard(disable_event_bus_subscription=True)
+    def __init__(self, blackboard: Optional[Blackboard] = None) -> None:
+        self._blackboard = blackboard or Blackboard()
 
     def build_state(self) -> Dict[str, Any]:
+        """Snapshots the blackboard and returns a frontend-friendly dictionary."""
         robot_position = self._blackboard.get(BlackboardDataKey.ROBOT_POSITION)
         robot_orientation = self._blackboard.get(BlackboardDataKey.ROBOT_ORIENTATION)
         robot_trail = list(self._blackboard.get(BlackboardDataKey.ROBOT_TRAIL, []))
@@ -41,7 +42,8 @@ class MissionBoardStateBuilder:
         target_distance = None
         if robot_position_dict and target_world:
             target_distance = self._euclidean_distance(robot_position_dict, target_world)
-            target_summary["distance_to_robot"] = target_distance
+            if target_summary is not None:
+                target_summary["distance_to_robot"] = target_distance
 
         persistent_objects = self._serialize_persistent_objects(map_snapshot, target_world)
 
@@ -227,7 +229,8 @@ class MissionBoardStateBuilder:
             w = self._coerce_float(getattr(value, "w", None))
         if None in (x, y, z, w):
             return None
-        return x, y, z, w
+        # Mypy needs help knowing that None in (x,y,z,w) check above means they are all float now
+        return (x, y, z, w)  # type: ignore[return-value]
 
     def _compute_yaw(self, quaternion: Any) -> Optional[float]:
         components = self._get_quaternion_components(quaternion)

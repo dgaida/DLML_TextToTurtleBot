@@ -1,3 +1,4 @@
+from typing import Any
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 
@@ -8,7 +9,7 @@ class TurnAround(Behaviour):
     def __init__(self, name: str) -> None:
         super().__init__(name)
 
-    def setup(self, twist: TwistWrapper, publisher) -> None:
+    def setup(self, twist: TwistWrapper, publisher: Any, **kwargs: Any) -> None:  # type: ignore[override]
         self.twist = twist
         self.publisher = publisher
 

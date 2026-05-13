@@ -4,7 +4,7 @@ import base64
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -145,7 +145,7 @@ class LLMAPI:
             ]
 
         llm = self._adapter.create_llm()
-        response = llm.invoke([HumanMessage(content=content)])
+        response = llm.invoke([HumanMessage(content=cast(Any, content))])
 
         if isinstance(response, AIMessage):
             return self._extract_text(response.content)
@@ -356,7 +356,7 @@ class LLMAPI:
         if not capabilities["supports_vision"]:
             if self._infer_vision_support(provider_name, self._model_name):
                 capabilities["supports_vision"] = True
-                modalities = list(capabilities.get("supported_input_modalities", []))
+                modalities = list(cast(Iterable[str], capabilities.get("supported_input_modalities", [])))
                 if "image" not in modalities:
                     modalities.append("image")
                 capabilities["supported_input_modalities"] = modalities

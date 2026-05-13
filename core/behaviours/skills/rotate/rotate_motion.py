@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, Any
 
 import py_trees
 from py_trees.common import Status
@@ -19,14 +19,14 @@ class RotateMotion(py_trees.behaviour.Behaviour):
         super().__init__(name)
         self._blackboard: Blackboard = Blackboard()
         self._twist: Optional[TwistWrapper] = None
-        self._publisher = None
+        self._publisher: Optional[Any] = None
         self._command = command
         self._angular_speed = abs(angular_speed)
         self._tolerance = math.radians(max(tolerance_deg, 0.0))
         self._last_yaw: Optional[float] = None
         self._travelled: float = 0.0
 
-    def setup(self, twist: TwistWrapper, publisher) -> None:
+    def setup(self, twist: TwistWrapper, publisher: Any, **kwargs: Any) -> None:  # type: ignore[override]
         self._twist = twist
         self._publisher = publisher
 
@@ -36,7 +36,7 @@ class RotateMotion(py_trees.behaviour.Behaviour):
         self._travelled = 0.0
 
     def update(self) -> Status:
-        if any(value is None for value in (self._twist, self._publisher)):
+        if self._twist is None or self._publisher is None:
             return Status.FAILURE
 
         target_angle = self._blackboard.get(BlackboardDataKey.ROTATE_TARGET_ANGLE)
@@ -95,7 +95,7 @@ class RotateMotion(py_trees.behaviour.Behaviour):
         self._publisher.publish(self._twist.get_message())
 
     @staticmethod
-    def _quaternion_to_yaw(q) -> float:
+    def _quaternion_to_yaw(q: Any) -> float:
         siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
         cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
         return math.atan2(siny_cosp, cosy_cosp)

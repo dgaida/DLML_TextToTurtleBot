@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional, Tuple, Any
 
 import numpy as np
 from numpy import ndarray
@@ -14,17 +14,17 @@ import tf2_geometry_msgs  # noqa: F401 - registers geometry conversions for tf t
 from core.perception.detection.object_detector import DetectedObject
 
 class DepthCameraProcessor():
-    def __init__(self, bridge: CvBridge, tf_buffer):
+    def __init__(self, bridge: CvBridge, tf_buffer: Any):
         self._event_bus = EventBus()
         self._blackboard = Blackboard()
         self._bridge = bridge
-        self.intrinsics = None
+        self.intrinsics: Optional[rs2.intrinsics] = None
         self.tf_buffer = tf_buffer
-        self.current_msg_timestamp = None
+        self.current_msg_timestamp: Any = None
         self.camera_frame = "oakd_rgb_camera_optical_frame"
         self.world_frame = "map"
 
-    def handle(self, msg) -> None: 
+    def handle(self, msg: Any) -> None:
         self.current_msg_timestamp = msg.header.stamp
 
         if msg.encoding == '32FC1':
@@ -43,42 +43,41 @@ class DepthCameraProcessor():
         
         self._calculate_world_coordinates(depth_image_raw)
         
-    def set_camera_intrinsics(self, camera_info) -> None:
+    def set_camera_intrinsics(self, camera_info: Any) -> None:
         if self.intrinsics:
             return
 
-        self.intrinsics = rs2.intrinsics()
-        self.intrinsics.width = camera_info.width
-        self.intrinsics.height = camera_info.height
-        self.intrinsics.ppx = camera_info.k[2]
-        self.intrinsics.ppy = camera_info.k[5]
-        self.intrinsics.fx = camera_info.k[0]
-        self.intrinsics.fy = camera_info.k[4]
+        intrinsics = rs2.intrinsics()
+        intrinsics.width = int(camera_info.width)
+        intrinsics.height = int(camera_info.height)
+        intrinsics.ppx = float(camera_info.k[2])
+        intrinsics.ppy = float(camera_info.k[5])
+        intrinsics.fx = float(camera_info.k[0])
+        intrinsics.fy = float(camera_info.k[4])
 
         if camera_info.distortion_model == 'plumb_bob':
-            self.intrinsics.model = rs2.distortion.brown_conrady
+            intrinsics.model = rs2.distortion.brown_conrady
         elif camera_info.distortion_model == 'equidistant':
-            self.intrinsics.model = rs2.distortion.kannala_brandt4
-        self.intrinsics.coeffs = [value for value in camera_info.d[:5]]
+            intrinsics.model = rs2.distortion.kannala_brandt4
+        intrinsics.coeffs = [float(value) for value in camera_info.d[:5]]
+        self.intrinsics = intrinsics
         
     def _calculate_world_coordinates(self, depth_image: ndarray) -> None:     
         detected_objects: Dict[str, List[DetectedObject]] = self._blackboard.get(BlackboardDataKey.DETECTED_OBJECTS, {})
         detected_object_classes = set(detected_objects.keys())
-        detected_objects_with_coordinates = {}
+        detected_objects_with_coordinates: Dict[str, List[DetectedObject]] = {}
 
         if not self.intrinsics:
             return
 
         for detected_object_class in detected_object_classes:
-            for i, detected_object in enumerate(detected_objects[detected_object_class]):
-                # Bounding boxes are stored as top-left/bottom-right pixel coordinates
+            for detected_object in detected_objects[detected_object_class]:
                 center_x = (detected_object.x1 + detected_object.x2) // 2
                 center_y = (detected_object.y1 + detected_object.y2) // 2
 
                 if not (0 <= center_x < depth_image.shape[1] and 0 <= center_y < depth_image.shape[0]):
                     continue
                 
-                # I'll make this a class parameter later, promised ;)
                 region_size = 5
                 y_start = max(0, center_y - region_size // 2)
                 y_end = min(depth_image.shape[0], center_y + region_size // 2 + 1)
@@ -96,12 +95,12 @@ class DepthCameraProcessor():
                 if center_depth == 0:
                     continue
                 
-                depth_meters = center_depth / 1000.0
+                depth_meters = float(center_depth / 1000.0)
                 camera_coords = rs2.rs2_deproject_pixel_to_point(self.intrinsics, [center_x, center_y], depth_meters)
                 world_coords = self._transform_to_world_coordinates(
-                    camera_coords[0],
-                    camera_coords[1],
-                    camera_coords[2],
+                    float(camera_coords[0]),
+                    float(camera_coords[1]),
+                    float(camera_coords[2]),
                     self.current_msg_timestamp,
                 )
 
@@ -119,7 +118,7 @@ class DepthCameraProcessor():
 
         self._event_bus.publish(DomainEvent(EventType.OBJECT_WORLD_COORDINATES_UPDATED, detected_objects_with_coordinates))
     
-    def _transform_to_world_coordinates(self, camera_x: float, camera_y: float, camera_z: float, timestamp):
+    def _transform_to_world_coordinates(self, camera_x: float, camera_y: float, camera_z: float, timestamp: Any) -> Optional[Tuple[float, float, float]]:
         if self.tf_buffer is None:
             return None
         
@@ -132,19 +131,14 @@ class DepthCameraProcessor():
     
         try:
             world_point = self.tf_buffer.transform(point_stamped, self.world_frame)
-            return (world_point.point.x, world_point.point.y, world_point.point.z)
-        except Exception as exc:  # noqa: BLE001
+            return (float(world_point.point.x), float(world_point.point.y), float(world_point.point.z))
+        except Exception:
             try:
                 point_stamped.header.stamp = self.tf_buffer.get_latest_common_time(
                     self.camera_frame,
                     self.world_frame,
                 )
                 world_point = self.tf_buffer.transform(point_stamped, self.world_frame)
-                return (world_point.point.x, world_point.point.y, world_point.point.z)
-            except Exception as exc2:  # noqa: BLE001
+                return (float(world_point.point.x), float(world_point.point.y), float(world_point.point.z))
+            except Exception:
                 return None
-        
-
-
-
-  

@@ -1,5 +1,5 @@
 from math import hypot
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 from core.perception.detection.object_detector import DetectedObject
 
@@ -31,27 +31,24 @@ class TargetSelector:
         self._current_target: Optional[DetectedObject] = None
         self._frames_with_current_target: int = 0
 
-    def select_target(self) -> DetectedObject:
+    def select_target(self) -> Optional[DetectedObject]:
         """
         Select the best target from multiple detections of the same class.
-
-        Args:
-            detections: List of detected objects
         """
-        detections_with_coordinates = self._blackboard.get(BlackboardDataKey.DETECTED_OBJECTS_WITH_COORDINATES, {})
-        detections = self._blackboard.get(BlackboardDataKey.DETECTED_OBJECTS)
+        detections_with_coordinates: Dict[str, List[DetectedObject]] = self._blackboard.get(BlackboardDataKey.DETECTED_OBJECTS_WITH_COORDINATES, {})
+        detections: Dict[str, List[DetectedObject]] = self._blackboard.get(BlackboardDataKey.DETECTED_OBJECTS, {})
 
         target_object_class = self._blackboard.get(BlackboardDataKey.TARGET_OBJECT_CLASS)
         if not target_object_class:
             self._reset_target()
             self._event_bus.publish(DomainEvent(event_type=EventType.TARGET_OBJECT_SELECTED, data=None))
-            return 
+            return None
 
         target_detections = detections.get(target_object_class, [])
         if not target_detections:
             self._reset_target()
             self._event_bus.publish(DomainEvent(event_type=EventType.TARGET_OBJECT_SELECTED, data=None))
-            return 
+            return None
 
         if self._current_target is not None:
             target_detections_with_coordinates = detections_with_coordinates.get(target_object_class, [])
@@ -61,18 +58,18 @@ class TargetSelector:
                     self._current_target = closest_detection
                     self._frames_with_current_target += 1
                     self._event_bus.publish(DomainEvent(event_type=EventType.TARGET_OBJECT_SELECTED, data=closest_detection))
-                    return 
+                    return self._current_target
 
             if self._frames_with_current_target < self._persistence_frames:
                 self._frames_with_current_target += 1
                 self._event_bus.publish(DomainEvent(event_type=EventType.TARGET_OBJECT_SELECTED, data=self._current_target))
-                return 
+                return self._current_target
 
         new_target = self._select_preferred_detection(target_detections)
         self._current_target = new_target
         self._frames_with_current_target = 0
         self._event_bus.publish(DomainEvent(event_type=EventType.TARGET_OBJECT_SELECTED, data=new_target))
-        return 
+        return self._current_target
 
     def _reset_target(self) -> None:
         self._current_target = None
@@ -101,16 +98,16 @@ class TargetSelector:
 
     @staticmethod
     def _detection_center(detection: DetectedObject) -> Tuple[float, float]:
-        cx = (detection.x1 + detection.x2) / 2.0
-        cy = (detection.y1 + detection.y2) / 2.0
+        cx = (float(detection.x1) + float(detection.x2)) / 2.0
+        cy = (float(detection.y1) + float(detection.y2)) / 2.0
         return cx, cy
 
     @staticmethod
     def _detection_area(detection: DetectedObject) -> float:
-        width = detection.x2 - detection.x1
-        height = detection.y2 - detection.y1
-        return max(width, 0) * max(height, 0)
+        width = float(detection.x2) - float(detection.x1)
+        height = float(detection.y2) - float(detection.y1)
+        return max(width, 0.0) * max(height, 0.0)
 
     @staticmethod
     def _detection_confidence(detection: DetectedObject) -> float:
-        return detection.confidence
+        return float(detection.confidence)

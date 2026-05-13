@@ -1,3 +1,4 @@
+from typing import Any
 from py_trees.behaviour import Behaviour
 from py_trees.common import Status
 from shared.blackboard.blackboard import Blackboard
@@ -8,7 +9,7 @@ class CheckLidar(Behaviour):
     def __init__(self, name: str) -> None:
         super(CheckLidar, self).__init__(name)
         
-    def setup(self) -> None:
+    def setup(self, **kwargs: Any) -> None:  # type: ignore[override]
         self._blackboard = Blackboard()
 
     def update(self) -> Status:

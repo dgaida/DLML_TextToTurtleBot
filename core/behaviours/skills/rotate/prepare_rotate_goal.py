@@ -36,7 +36,7 @@ class PrepareRotateGoal(py_trees.behaviour.Behaviour):
         parameters = self._command.parameters
         angle_deg = float(parameters.get("angle_deg", 0.0))
         if angle_deg <= 0.0:
-            self.logger.warn("Rotate command missing positive angle")
+            self.logger.warning("Rotate command missing positive angle")
             return Status.FAILURE
 
         angle_rad = math.radians(angle_deg)
