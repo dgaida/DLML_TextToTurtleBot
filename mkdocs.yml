@@ -1,6 +1,7 @@
 site_name: TextToTurtleBot
 site_description: Professionelle Dokumentation für das TextToTurtleBot Ökosystem
 site_author: TextToTurtleBot Team
+site_url: https://your-org.github.io/TextToTurtleBot/
 
 theme:
   name: material
@@ -9,6 +10,7 @@ theme:
     - navigation.tabs
     - navigation.sections
     - navigation.top
+    - navigation.indexes
     - search.highlight
     - search.share
     - content.tabs.link
@@ -35,8 +37,30 @@ plugins:
   - i18n:
       default_language: de
       languages:
-        de: Deutsch
-        en: English
+        de:
+          name: Deutsch
+          link: /de/
+          build_site: true
+        en:
+          name: English
+          link: /en/
+          build_site: true
+      nav_translations:
+        en:
+          Home: Home
+          Erste Schritte: Getting Started
+          Installation: Installation
+          Konfiguration: Configuration
+          Bedienung: Usage
+          API Referenz: API Reference
+          Architektur: Architecture
+          Entwicklung: Development
+          Übersicht: Overview
+          Changelog: Changelog
+          Docstring Guide: Docstring Guide
+          Versionierung: Versioning
+          Fehlerbehebung: Troubleshooting
+          Metriken: Metrics
   - mkdocstrings:
       handlers:
         python:
@@ -75,42 +99,17 @@ markdown_extensions:
       permalink: true
 
 nav:
-  - Home:
-    - de: de/index.md
-    - en: en/index.md
-  - Getting Started:
-    - de: de/getting-started.md
-    - en: en/getting-started.md
-  - Installation:
-    - de: de/installation.md
-    - en: en/installation.md
-  - Configuration:
-    - de: de/configuration.md
-    - en: en/configuration.md
-  - Usage:
-    - de: de/usage/index.md
-    - en: en/usage/index.md
-  - API:
-    - de: de/api/index.md
-    - en: en/api/index.md
-  - Architecture:
-    - de: de/architecture/index.md
-    - en: en/architecture/index.md
-  - Development:
-    - de: de/development/index.md
-    - en: en/development/index.md
-    - Changelog:
-      - de: de/development/changelog.md
-      - en: en/development/changelog.md
-    - Docstring Guide:
-      - de: de/development/docstring-guide.md
-      - en: en/development/docstring-guide.md
-    - Versioning:
-      - de: de/development/versioning.md
-      - en: en/development/versioning.md
-  - Troubleshooting:
-    - de: de/troubleshooting.md
-    - en: en/troubleshooting.md
-  - Metrics:
-    - de: de/metrics.md
-    - en: en/metrics.md
+  - Home: index.md
+  - Erste Schritte: getting-started.md
+  - Installation: installation.md
+  - Konfiguration: configuration.md
+  - Bedienung: usage/index.md
+  - API Referenz: api/index.md
+  - Architektur: architecture/index.md
+  - Entwicklung:
+      - Übersicht: development/index.md
+      - Changelog: development/changelog.md
+      - Docstring Guide: development/docstring-guide.md
+      - Versionierung: development/versioning.md
+  - Fehlerbehebung: troubleshooting.md
+  - Metriken: metrics.md

@@ -16,21 +16,4 @@ Dieses Dashboard visualisiert die Qualität und Abdeckung unserer Dokumentation.
   <p>Lade Metriken...</p>
 </div>
 
-<script>
-fetch('assets/metrics.json')
-  .then(response => response.json())
-  .then(data => {
-    const dashboard = document.getElementById('metrics-dashboard');
-    dashboard.innerHTML = `
-      <ul>
-        <li><strong>API Coverage:</strong> ${data.api_coverage}%</li>
-        <li><strong>Broken Links:</strong> ${data.broken_links}</li>
-        <li><strong>Lint Errors:</strong> ${data.lint_errors}</li>
-        <li><strong>Last Updated:</strong> ${data.last_updated}</li>
-      </ul>
-    `;
-  })
-  .catch(error => {
-    document.getElementById('metrics-dashboard').innerHTML = '<p>Metriken zurzeit nicht verfügbar.</p>';
-  });
-</script>
+<script src="../assets/metrics-renderer.js"></script>

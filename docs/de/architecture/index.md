@@ -28,12 +28,38 @@ graph TD
 
 Der Datenfluss bei einem Sprachbefehl sieht wie folgt aus:
 
-1.  Der Nutzer gibt einen Text im **Web Dashboard** ein.
-2.  Das **Web Backend** empfängt den Text und leitet ihn an den **TextToTurtlebotNode** weiter.
-3.  Der **LLM API** Dienst analysiert den Text mithilfe eines LLM-Adapters und generiert strukturierte Kommandos.
-4.  Diese Kommandos werden in den **Behavior Tree** eingespeist.
-5.  Der Verhaltensbaum führt die entsprechenden **Skills** (z.B. Navigation, Objektsuche) aus, indem er mit dem **ROS 2 Ecosystem** interagiert.
-6.  Zustands- und Sensordaten werden kontinuierlich über das **Blackboard** synchronisiert und im Dashboard visualisiert.
+```mermaid
+sequenceDiagram
+    participant U as Nutzer
+    participant W as Web Backend
+    participant B as Blackboard
+    participant T as TextToTurtlebotNode
+    participant L as LLM API
+
+    U->>W: Sendet Sprachbefehl
+    W->>B: Schreibt Befehl in Queue
+    T->>B: Liest Befehl aus Queue
+    T->>L: Anforderung zur Analyse
+    L-->>T: Strukturierte Kommandos
+    T->>T: Führt Behavior Tree aus
+    T->>B: Aktualisiert Status
+    B-->>W: Status-Update (Polling/Event)
+    W-->>U: Zeigt Fortschritt im Dashboard
+```
+
+## Komponenten-Lebenszyklus
+
+```mermaid
+stateDiagram-v2
+    [*] --> Initializing
+    Initializing --> Idle: ROS 2 Nodes gestartet
+    Idle --> Processing: Sprachbefehl empfangen
+    Processing --> Executing: LLM Plan generiert
+    Executing --> Processing: Nächster Schritt
+    Executing --> Idle: Mission abgeschlossen
+    Executing --> Error: Fehler aufgetreten
+    Error --> Idle: Recovery/Reset
+```
 
 ## Kernkomponenten
 
