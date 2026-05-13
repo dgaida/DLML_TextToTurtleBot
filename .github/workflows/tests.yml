@@ -21,7 +21,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           # Mock ROS 2 dependencies and install project ones
-          pip install pytest pytest-cov httpx fastapi uvicorn pydantic langchain langchain-community langchain-openai langchain-google-genai langchain-ollama python-dotenv llm_client ultralytics typeguard "numpy<2" py_trees
+          pip install pytest pytest-cov httpx fastapi uvicorn pydantic langchain langchain-community langchain-openai langchain-google-genai langchain-ollama python-dotenv ultralytics typeguard "numpy<2" py_trees
           if [ -f requirements.txt ]; then
             grep -v "rclpy" requirements.txt > requirements_filtered.txt
             pip install -r requirements_filtered.txt

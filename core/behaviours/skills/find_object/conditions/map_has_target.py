@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 import py_trees
 from py_trees.common import Status
@@ -6,7 +6,6 @@ from py_trees.common import Status
 from shared.blackboard.blackboard import Blackboard
 from shared.blackboard.interfaces.blackboard_data_keys import BlackboardDataKey
 from core.map.map import PersistentTrackedObject
-from core.perception.detection.object_detector import DetectedObject
 
 
 class MapHasTarget(py_trees.behaviour.Behaviour):

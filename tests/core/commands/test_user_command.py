@@ -1,4 +1,3 @@
-import pytest
 from core.commands.user_command import UserCommand, CommandType
 
 def test_navigate_factory():

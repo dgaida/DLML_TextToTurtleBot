@@ -35,7 +35,6 @@ from rclpy.executors import SingleThreadedExecutor
 from rclpy.qos import DurabilityPolicy
 from rclpy.qos import HistoryPolicy
 from rclpy.qos import QoSProfile
-import tf2_ros
 from tf2_ros.buffer import Buffer
 from tf2_msgs.msg import TFMessage
 from threading import Thread

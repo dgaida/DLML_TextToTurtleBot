@@ -1,3 +1,4 @@
+import math
 class DetectedObject: 
     def __init__(self, x1: int, y1: int, x2: int, y2: int, name: str, confidence: float):
         self.x1 = x1

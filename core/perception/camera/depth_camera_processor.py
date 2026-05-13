@@ -133,7 +133,7 @@ class DepthCameraProcessor():
         try:
             world_point = self.tf_buffer.transform(point_stamped, self.world_frame)
             return (world_point.point.x, world_point.point.y, world_point.point.z)
-        except Exception as exc:  # noqa: BLE001
+        except Exception:  # noqa: BLE001
             try:
                 point_stamped.header.stamp = self.tf_buffer.get_latest_common_time(
                     self.camera_frame,
@@ -141,7 +141,7 @@ class DepthCameraProcessor():
                 )
                 world_point = self.tf_buffer.transform(point_stamped, self.world_frame)
                 return (world_point.point.x, world_point.point.y, world_point.point.z)
-            except Exception as exc2:  # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 return None
         
 
